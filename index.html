@@ -73,7 +73,7 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // Sign in anonymously and get user ID
+    // Sign in anonymously
     const login = await signInAnonymously(auth);
     const userId = login.user.uid;
 
@@ -95,6 +95,7 @@
     });
 
     let completed = [];
+    let current = null;
 
     // Load progress from Firestore
     async function loadProgress() {
@@ -109,22 +110,26 @@
       await setDoc(doc(db, "progress", userId), { completed, updated: new Date() });
     }
 
+    // Update remaining chapters count
     function updateRemaining() {
-      document.getElementById("remaining").textContent = allChapters.length - completed.length;
+      const remainingCount = allChapters.filter(c => !completed.includes(c)).length;
+      document.getElementById("remaining").textContent = remainingCount;
     }
 
-    let current = null;
-
+    // Pick a random chapter
     window.pickChapter = function() {
       const remaining = allChapters.filter(c => !completed.includes(c));
       if (remaining.length === 0) {
         document.getElementById("chapter").textContent = "🎉 Bible Completed! 🎉";
+        document.getElementById("remaining").textContent = 0;
         return;
       }
       current = remaining[Math.floor(Math.random() * remaining.length)];
       document.getElementById("chapter").textContent = current;
+      updateRemaining();
     }
 
+    // Mark current chapter as completed
     window.markCompleted = async function() {
       if (!current || completed.includes(current)) return;
       completed.push(current);
