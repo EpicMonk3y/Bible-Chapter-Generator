@@ -59,39 +59,101 @@
     import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // Firebase config
-    const firebaseConfig = {
-      apiKey: "AIzaSyA7cdTUHf1yxnMOmHbDFUiEGiIsj06ToIU",
-      authDomain: "bible-study-670e3.firebaseapp.com",
-      projectId: "bible-study-670e3",
-      storageBucket: "bible-study-670e3.firebasestorage.app",
-      messagingSenderId: "815852707736",
-      appId: "1:815852707736:web:fbe141791cefc2569d95ed"
-    };
+    async function init() {
+      // Firebase config
+      const firebaseConfig = {
+        apiKey: "AIzaSyA7cdTUHf1yxnMOmHbDFUiEGiIsj06ToIU",
+        authDomain: "bible-study-670e3.firebaseapp.com",
+        projectId: "bible-study-670e3",
+        storageBucket: "bible-study-670e3.firebasestorage.app",
+        messagingSenderId: "815852707736",
+        appId: "1:815852707736:web:fbe141791cefc2569d95ed"
+      };
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
 
-    // Sign in anonymously
-    const login = await signInAnonymously(auth);
-    const userId = login.user.uid;
+      // Sign in anonymously
+      let login;
+      try {
+        login = await signInAnonymously(auth);
+      } catch (e) {
+        console.error("Auth error:", e);
+        document.getElementById("chapter").textContent = "Error signing in";
+        return;
+      }
+      const userId = login.user.uid;
 
-    // Bible data
-    const bible = {
-      "Genesis": 50, "Exodus": 40, "Leviticus": 27, "Numbers": 36, "Deuteronomy": 34,
-      "Joshua": 24, "Judges": 21, "Ruth": 4, "1 Samuel": 31, "2 Samuel": 24,
-      "1 Kings": 22, "2 Kings": 25, "Psalms": 150, "Proverbs": 31, "Ecclesiastes": 12,
-      "Isaiah": 66, "Matthew": 28, "Mark": 16, "Luke": 24, "John": 21, "Acts": 28,
-      "Romans": 16, "1 Corinthians": 16, "2 Corinthians": 13, "Galatians": 6,
-      "Ephesians": 6, "Philippians": 4, "Colossians": 4, "1 Thessalonians": 5,
-      "2 Thessalonians": 3, "Hebrews": 13, "James": 5, "1 Peter": 5, "2 Peter": 3,
-      "Revelation": 22
-    };
+      // Bible data
+      const bible = {
+        "Genesis": 50, "Exodus": 40, "Leviticus": 27, "Numbers": 36, "Deuteronomy": 34,
+        "Joshua": 24, "Judges": 21, "Ruth": 4, "1 Samuel": 31, "2 Samuel": 24,
+        "1 Kings": 22, "2 Kings": 25, "Psalms": 150, "Proverbs": 31, "Ecclesiastes": 12,
+        "Isaiah": 66, "Matthew": 28, "Mark": 16, "Luke": 24, "John": 21, "Acts": 28,
+        "Romans": 16, "1 Corinthians": 16, "2 Corinthians": 13, "Galatians": 6,
+        "Ephesians": 6, "Philippians": 4, "Colossians": 4, "1 Thessalonians": 5,
+        "2 Thessalonians": 3, "Hebrews": 13, "James": 5, "1 Peter": 5, "2 Peter": 3,
+        "Revelation": 22
+      };
 
-    const allChapters = [];
-    Object.entries(bible).forEach(([book, count]) => {
-      for (let i = 1; i <= count; i++) allChapters.push(`${book} ${i}`);
-    });
+      const allChapters = [];
+      Object.entries(bible).forEach(([book, count]) => {
+        for (let i = 1; i <= count; i++) allChapters.push(`${book} ${i}`);
+      });
 
-    let com
+      let completed = [];
+      let current = null;
+
+      async function loadProgress() {
+        try {
+          const snap = await getDoc(doc(db, "progress", userId));
+          completed = snap.exists() && Array.isArray(snap.data().completed) ? snap.data().completed : [];
+        } catch (e) {
+          console.error("Error loading progress:", e);
+          completed = [];
+        }
+        updateRemaining();
+        document.getElementById("chapter").textContent = "Click below to begin";
+      }
+
+      async function saveProgress() {
+        try {
+          await setDoc(doc(db, "progress", userId), { completed, updated: new Date() });
+        } catch (e) {
+          console.error("Error saving progress:", e);
+        }
+      }
+
+      function updateRemaining() {
+        const remainingCount = allChapters.filter(c => !completed.includes(c)).length;
+        document.getElementById("remaining").textContent = remainingCount;
+      }
+
+      window.pickChapter = function() {
+        const remaining = allChapters.filter(c => !completed.includes(c));
+        if (remaining.length === 0) {
+          document.getElementById("chapter").textContent = "🎉 Bible Completed! 🎉";
+          document.getElementById("remaining").textContent = 0;
+          return;
+        }
+        current = remaining[Math.floor(Math.random() * remaining.length)];
+        document.getElementById("chapter").textContent = current;
+      }
+
+      window.markCompleted = async function() {
+        if (!current || completed.includes(current)) return;
+        completed.push(current);
+        await saveProgress();
+        current = null;
+        document.getElementById("chapter").textContent = "Marked completed ✔";
+        updateRemaining();
+      }
+
+      await loadProgress();
+    }
+
+    init();
+  </script>
+</body>
+</html>
