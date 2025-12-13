@@ -23,9 +23,7 @@
       box-shadow: 0 4px 10px rgba(0,0,0,0.1);
       text-align: center;
     }
-    h1 {
-      margin-top: 0;
-    }
+    h1 { margin-top: 0; }
     button {
       width: 100%;
       padding: 12px;
@@ -35,139 +33,108 @@
       border: none;
       cursor: pointer;
     }
-    .primary {
-      background: #2563eb;
-      color: white;
-    }
-    .secondary {
-      background: #e5e7eb;
-    }
+    .primary { background: #2563eb; color: white; }
+    .secondary { background: #e5e7eb; }
     .chapter {
       font-size: 20px;
       font-weight: bold;
       margin: 16px 0;
       min-height: 28px;
     }
-    .footer {
-      font-size: 12px;
-      color: #555;
-      margin-top: 12px;
-    }
+    .footer { font-size: 12px; color: #555; margin-top: 12px; }
   </style>
 </head>
-
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-  import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "PASTE_FROM_FIREBASE",
-    authDomain: "PASTE_FROM_FIREBASE",
-    projectId: "PASTE_FROM_FIREBASE",
-    storageBucket: "PASTE_FROM_FIREBASE",
-    messagingSenderId: "PASTE_FROM_FIREBASE",
-    appId: "PASTE_FROM_FIREBASE"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-
-  const login = await signInAnonymously(auth);
-  const userId = login.user.uid;
-
-  window.saveProgress = async (completed) => {
-    await setDoc(doc(db, "progress", userId), {
-      completed,
-      updated: new Date()
-    });
-  };
-
-  window.loadProgress = async () => {
-    const snap = await getDoc(doc(db, "progress", userId));
-    return snap.exists() ? snap.data().completed : [];
-  };
-</script>
-
 <body>
   <div class="card">
     <h1>Bible Chapter Generator</h1>
     <p>Randomly selects an unread Bible chapter.</p>
-
-    <div id="chapter" class="chapter">Click below to begin</div>
-
+    <div id="chapter" class="chapter">Loading...</div>
     <button class="primary" onclick="pickChapter()">Pick Random Chapter</button>
     <button class="secondary" onclick="markCompleted()">Mark as Completed</button>
-
-    <div class="footer">
-      Remaining chapters: <span id="remaining"></span>
-    </div>
+    <div class="footer"> Remaining chapters: <span id="remaining"></span> </div>
   </div>
 
- <script>
-const allChapters = [];
-Object.entries(bible).forEach(([book, count]) => {
-  for (let i = 1; i <= count; i++) {
-    allChapters.push(`${book} ${i}`);
-  }
-});
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-let completed = [];
-let current = null;
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyA7cdTUHf1yxnMOmHbDFUiEGiIsj06ToIU",
+      authDomain: "bible-study-670e3.firebaseapp.com",
+      projectId: "bible-study-670e3",
+      storageBucket: "bible-study-670e3.firebasestorage.app",
+      messagingSenderId: "815852707736",
+      appId: "1:815852707736:web:fbe141791cefc2569d95ed"
+    };
 
-// Update remaining count
-function updateRemaining() {
-  document.getElementById("remaining").textContent =
-    allChapters.length - completed.length;
-}
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
-// Pick a random unread chapter
-function pickChapter() {
-  const remaining = allChapters.filter(c => !completed.includes(c));
-  if (remaining.length === 0) {
-    document.getElementById("chapter").textContent = "🎉 Bible Completed! 🎉";
-    return;
-  }
-  current = remaining[Math.floor(Math.random() * remaining.length)];
-  document.getElementById("chapter").textContent = current;
-}
+    // Sign in anonymously and get user ID
+    const login = await signInAnonymously(auth);
+    const userId = login.user.uid;
 
-// Mark the current chapter as completed
-async function markCompleted() {
-  if (!current || completed.includes(current)) return;
+    // Bible data
+    const bible = {
+      "Genesis": 50, "Exodus": 40, "Leviticus": 27, "Numbers": 36, "Deuteronomy": 34,
+      "Joshua": 24, "Judges": 21, "Ruth": 4, "1 Samuel": 31, "2 Samuel": 24,
+      "1 Kings": 22, "2 Kings": 25, "Psalms": 150, "Proverbs": 31, "Ecclesiastes": 12,
+      "Isaiah": 66, "Matthew": 28, "Mark": 16, "Luke": 24, "John": 21, "Acts": 28,
+      "Romans": 16, "1 Corinthians": 16, "2 Corinthians": 13, "Galatians": 6,
+      "Ephesians": 6, "Philippians": 4, "Colossians": 4, "1 Thessalonians": 5,
+      "2 Thessalonians": 3, "Hebrews": 13, "James": 5, "1 Peter": 5, "2 Peter": 3,
+      "Revelation": 22
+    };
 
-  completed.push(current);
+    const allChapters = [];
+    Object.entries(bible).forEach(([book, count]) => {
+      for (let i = 1; i <= count; i++) allChapters.push(`${book} ${i}`);
+    });
 
-  // Save to localStorage as backup
-  localStorage.setItem("completedChapters", JSON.stringify(completed));
+    let completed = [];
 
-  // Save to Firebase Firestore
-  if (window.saveProgress) {
-    await window.saveProgress(completed);
-  }
+    // Load progress from Firestore
+    async function loadProgress() {
+      const snap = await getDoc(doc(db, "progress", userId));
+      completed = snap.exists() ? snap.data().completed : [];
+      updateRemaining();
+      document.getElementById("chapter").textContent = "Click below to begin";
+    }
 
-  current = null;
-  document.getElementById("chapter").textContent = "Marked completed ✔";
-  updateRemaining();
-}
+    // Save progress to Firestore
+    async function saveProgress() {
+      await setDoc(doc(db, "progress", userId), { completed, updated: new Date() });
+    }
 
-// Load progress from Firebase on page load
-async function initProgress() {
-  if (window.loadProgress) {
-    completed = await window.loadProgress();
-  }
+    function updateRemaining() {
+      document.getElementById("remaining").textContent = allChapters.length - completed.length;
+    }
 
-  // Fallback to localStorage if nothing in Firebase
-  if (!completed.length) {
-    completed = JSON.parse(localStorage.getItem("completedChapters") || "[]");
-  }
+    let current = null;
 
-  updateRemaining();
-}
+    window.pickChapter = function() {
+      const remaining = allChapters.filter(c => !completed.includes(c));
+      if (remaining.length === 0) {
+        document.getElementById("chapter").textContent = "🎉 Bible Completed! 🎉";
+        return;
+      }
+      current = remaining[Math.floor(Math.random() * remaining.length)];
+      document.getElementById("chapter").textContent = current;
+    }
 
-// Initialize on page load
-initProgress();
-</script>
+    window.markCompleted = async function() {
+      if (!current || completed.includes(current)) return;
+      completed.push(current);
+      await saveProgress();
+      current = null;
+      document.getElementById("chapter").textContent = "Marked completed ✔";
+      updateRemaining();
+    }
+
+    await loadProgress();
+  </script>
 </body>
 </html>
