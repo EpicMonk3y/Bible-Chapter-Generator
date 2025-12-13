@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bible Chapter Generator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f7f7f7;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .card {
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    h1 {
+      margin-top: 0;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+    }
+    .primary {
+      background: #2563eb;
+      color: white;
+    }
+    .secondary {
+      background: #e5e7eb;
+    }
+    .chapter {
+      font-size: 20px;
+      font-weight: bold;
+      margin: 16px 0;
+      min-height: 28px;
+    }
+    .footer {
+      font-size: 12px;
+      color: #555;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Bible Chapter Generator</h1>
+    <p>Randomly selects an unread Bible chapter.</p>
+
+    <div id="chapter" class="chapter">Click below to begin</div>
+
+    <button class="primary" onclick="pickChapter()">Pick Random Chapter</button>
+    <button class="secondary" onclick="markCompleted()">Mark as Completed</button>
+
+    <div class="footer">
+      Remaining chapters: <span id="remaining"></span>
+    </div>
+  </div>
+
+  <script>
+    const bible = {
+      "Genesis": 50, "Exodus": 40, "Leviticus": 27, "Numbers": 36,
+      "Deuteronomy": 34, "Joshua": 24, "Judges": 21, "Ruth": 4,
+      "1 Samuel": 31, "2 Samuel": 24, "1 Kings": 22, "2 Kings": 25,
+      "Psalms": 150, "Proverbs": 31, "Ecclesiastes": 12, "Isaiah": 66,
+      "Matthew": 28, "Mark": 16, "Luke": 24, "John": 21,
+      "Acts": 28, "Romans": 16, "1 Corinthians": 16, "2 Corinthians": 13,
+      "Galatians": 6, "Ephesians": 6, "Philippians": 4, "Colossians": 4,
+      "1 Thessalonians": 5, "2 Thessalonians": 3, "Hebrews": 13,
+      "James": 5, "1 Peter": 5, "2 Peter": 3, "Revelation": 22
+    };
+
+    const allChapters = [];
+    Object.entries(bible).forEach(([book, count]) => {
+      for (let i = 1; i <= count; i++) {
+        allChapters.push(`${book} ${i}`);
+      }
+    });
+
+    let completed = JSON.parse(localStorage.getItem("completedChapters") || "[]");
+    let current = null;
+
+    function updateRemaining() {
+      document.getElementById("remaining").textContent =
+        allChapters.length - completed.length;
+    }
+
+    function pickChapter() {
+      const remaining = allChapters.filter(c => !completed.includes(c));
+      if (remaining.length === 0) {
+        document.getElementById("chapter").textContent = "🎉 Bible Completed! 🎉";
+        return;
+      }
+      current = remaining[Math.floor(Math.random() * remaining.length)];
+      document.getElementById("chapter").textContent = current;
+    }
+
+    function markCompleted() {
+      if (!current || completed.includes(current)) return;
+      completed.push(current);
+      localStorage.setItem("completedChapters", JSON.stringify(completed));
+      current = null;
+      document.getElementById("chapter").textContent = "Marked completed ✔";
+      updateRemaining();
+    }
+
+    updateRemaining();
+  </script>
+</body>
+</html>
